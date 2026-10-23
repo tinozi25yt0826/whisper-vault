@@ -61,6 +61,8 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         // Pocket guard: a stray tap must not record for hours
         internal const val MAX_RECORDING_MS = 15 * 60 * 1000L
+        // A brush of the finger must not start a recording; holding does
+        internal const val HOLD_TO_RECORD_MS = 500L
 
         /** Button only on an unlocked, switched-on screen, so it can't be hit in a pocket. */
         internal fun overlayVisible(action: String?, keyguardLocked: Boolean) =
@@ -204,15 +206,25 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         var startX = 0; var startY = 0
         var touchX = 0f; var touchY = 0f
+        var heldToRecord = false
+        val holdStart = Runnable {
+            heldToRecord = true
+            if (state == State.IDLE) startRecording()
+        }
 
         overlay.setOnTouchListener { v, ev ->
             when (ev.action) {
                 MotionEvent.ACTION_DOWN -> {
                     startX = params.x; startY = params.y
                     touchX = ev.rawX; touchY = ev.rawY
+                    heldToRecord = false
+                    if (state == State.IDLE) handler.postDelayed(holdStart, HOLD_TO_RECORD_MS)
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
+                    if (abs(ev.rawX - touchX) + abs(ev.rawY - touchY) >= TAP_THRESHOLD_DP * dp) {
+                        handler.removeCallbacks(holdStart)  // dragging the button, not recording
+                    }
                     params.x = startX + (ev.rawX - touchX).toInt()
                     params.y = startY + (ev.rawY - touchY).toInt()
                     wm.updateViewLayout(v, params)
@@ -223,9 +235,10 @@ class WhisperAccessibilityService : AccessibilityService() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
+                    handler.removeCallbacks(holdStart)
                     val moved = abs(ev.rawX - touchX) + abs(ev.rawY - touchY)
                     if (moved < TAP_THRESHOLD_DP * dp) {
-                        onTap()
+                        if (!heldToRecord) onTap()
                     } else {
                         params.x = if (params.x + ringSize / 2 > screenW / 2)
                             screenW - ringSize - margin else margin
@@ -237,6 +250,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                     }
                     true
                 }
+                MotionEvent.ACTION_CANCEL -> { handler.removeCallbacks(holdStart); true }
                 else -> false
             }
         }
@@ -372,7 +386,7 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun onTap() {
         when (state) {
-            State.IDLE -> startRecording()
+            State.IDLE -> showFeedback("Hold to record")
             State.RECORDING -> stopAndTranscribe()
             State.TRANSCRIBING -> {}
         }

@@ -30,6 +30,11 @@ class PocketGuardTest {
     }
 
     @Test
+    fun `recording starts only after holding half a second`() {
+        assertEquals(500L, WhisperAccessibilityService.HOLD_TO_RECORD_MS)
+    }
+
+    @Test
     fun `recording limit is 15 minutes`() {
         assertEquals(15 * 60 * 1000L, WhisperAccessibilityService.MAX_RECORDING_MS)
     }
