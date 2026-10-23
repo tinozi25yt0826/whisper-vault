@@ -45,7 +45,7 @@ make build
 APK output:
 
 ```bash
-app/build/outputs/apk/debug/app-debug.apk
+app/build/outputs/apk/debug/whisper-vault-debug.apk
 ```
 
 If you use ADB:

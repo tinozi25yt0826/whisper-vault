@@ -3,7 +3,7 @@ SHELL := /bin/bash
 -include .env
 PHONE_HOST ?= pixel-5
 SSH_PORT   ?= 8022
-APK        := app/build/outputs/apk/debug/app-debug.apk
+APK        := app/build/outputs/apk/debug/whisper-vault-debug.apk
 
 export JAVA_HOME := /opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
 export ANDROID_HOME := $(HOME)/Library/Android/sdk
@@ -19,8 +19,8 @@ test:
 	./gradlew testDebugUnitTest
 
 install: build
-	scp -P $(SSH_PORT) $(APK) $(PHONE_HOST):~/storage/downloads/phone-whisper.apk
-	ssh -p $(SSH_PORT) $(PHONE_HOST) "termux-open ~/storage/downloads/phone-whisper.apk"
+	scp -P $(SSH_PORT) $(APK) $(PHONE_HOST):~/storage/downloads/whisper-vault.apk
+	ssh -p $(SSH_PORT) $(PHONE_HOST) "termux-open ~/storage/downloads/whisper-vault.apk"
 	@echo "APK sent — approve install on phone"
 
 adb-install: build

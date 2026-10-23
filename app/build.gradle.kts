@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
+base.archivesName = "whisper-vault"
+
 android {
     namespace = "com.kafkasl.phonewhisper"
     compileSdk = 34
