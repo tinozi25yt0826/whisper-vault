@@ -99,7 +99,7 @@ Full policy: [PRIVACY.md](PRIVACY.md)
 Models are stored in app storage under:
 
 ```bash
-/data/data/com.kafkasl.phonewhisper/files/models/
+/data/data/de.tinozi.whispervault/files/models/
 ```
 
 Current catalog:

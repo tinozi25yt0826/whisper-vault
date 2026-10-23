@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 
         // Top large header (like "Connected devices")
         val header = TextView(this).apply {
-            text = "Phone Whisper"
+            text = getString(R.string.app_name)
             textSize = 32f
             setPadding(dp(24), dp(64), dp(24), dp(24))
         }

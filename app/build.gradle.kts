@@ -8,7 +8,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.kafkasl.phonewhisper"
+        applicationId = "de.tinozi.whispervault"
         minSdk = 30
         targetSdk = 34
         versionCode = 2
