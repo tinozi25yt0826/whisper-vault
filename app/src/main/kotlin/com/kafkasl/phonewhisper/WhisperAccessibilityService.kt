@@ -1,9 +1,13 @@
 package com.kafkasl.phonewhisper
 
 import android.accessibilityservice.AccessibilityService
+import android.app.KeyguardManager
+import android.content.BroadcastReceiver
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.res.ColorStateList
 import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
@@ -13,6 +17,8 @@ import android.media.MediaRecorder
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Log
 import android.view.Gravity
 import android.view.MotionEvent
@@ -25,6 +31,7 @@ import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import java.io.ByteArrayOutputStream
 import kotlin.concurrent.thread
 import kotlin.math.abs
@@ -47,6 +54,13 @@ class WhisperAccessibilityService : AccessibilityService() {
         private const val COLOR_BUSY = 0xDD6B6B6B.toInt()
         private const val COLOR_FEEDBACK_BG = 0xEE1C1C1E.toInt()
         private const val COLOR_RING = 0xFFE8EAED.toInt()
+
+        // Pocket guard: a stray tap must not record for hours
+        internal const val MAX_RECORDING_MS = 15 * 60 * 1000L
+
+        /** Button only on an unlocked, switched-on screen, so it can't be hit in a pocket. */
+        internal fun overlayVisible(action: String?, keyguardLocked: Boolean) =
+            action != Intent.ACTION_SCREEN_OFF && !keyguardLocked
     }
 
     private enum class State { IDLE, RECORDING, TRANSCRIBING }
@@ -66,6 +80,17 @@ class WhisperAccessibilityService : AccessibilityService() {
             feedbackView?.visibility = View.GONE
         }?.start()
     }
+    private val maxDurationStop = Runnable {
+        if (state == State.RECORDING) {
+            showFeedback("Stopped at 15 min limit", 3000)
+            stopAndTranscribe()
+        }
+    }
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            setOverlayVisible(overlayVisible(intent.action, isKeyguardLocked()))
+        }
+    }
 
     // Local transcription engine (loaded lazily)
     private var localTranscriber: LocalTranscriber? = null
@@ -77,6 +102,13 @@ class WhisperAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         instance = this
         showOverlay()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        ContextCompat.registerReceiver(this, screenReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
+        setOverlayVisible(overlayVisible(null, isKeyguardLocked()))
         // Try to load local model in background
         thread { initLocalModel() }
     }
@@ -86,6 +118,8 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     override fun onDestroy() {
         instance = null
+        handler.removeCallbacks(maxDurationStop)
+        try { unregisterReceiver(screenReceiver) } catch (_: IllegalArgumentException) {}
         removeOverlay()
         super.onDestroy()
     }
@@ -235,6 +269,22 @@ class WhisperAccessibilityService : AccessibilityService() {
         feedbackLayoutParams = null
     }
 
+    private fun isKeyguardLocked() = getSystemService(KeyguardManager::class.java).isKeyguardLocked
+
+    private fun setOverlayVisible(visible: Boolean) {
+        val view = overlayView ?: return
+        val params = layoutParams ?: return
+        view.visibility = if (visible) View.VISIBLE else View.GONE
+        // A hidden overlay window would still swallow touches at its position
+        params.flags = if (visible) params.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+            else params.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        (getSystemService(WINDOW_SERVICE) as WindowManager).updateViewLayout(view, params)
+    }
+
+    private fun vibrate(vararg timings: Long) {
+        getSystemService(Vibrator::class.java)?.vibrate(VibrationEffect.createWaveform(timings, -1))
+    }
+
     private fun circle(color: Int) = GradientDrawable().apply {
         shape = GradientDrawable.OVAL; setColor(color)
     }
@@ -332,6 +382,8 @@ class WhisperAccessibilityService : AccessibilityService() {
         setBusy(false)
         setAppearance(COLOR_RECORDING)
         startPulse()
+        vibrate(0, 50)
+        handler.postDelayed(maxDurationStop, MAX_RECORDING_MS)
 
         thread {
             val buf = ByteArray(bufSize)
@@ -343,6 +395,8 @@ class WhisperAccessibilityService : AccessibilityService() {
     }
 
     private fun stopAndTranscribe() {
+        handler.removeCallbacks(maxDurationStop)
+        vibrate(0, 40, 90, 40)
         state = State.TRANSCRIBING
         stopPulse()
         setAppearance(COLOR_BUSY)
