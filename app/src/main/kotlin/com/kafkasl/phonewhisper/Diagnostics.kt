@@ -24,6 +24,7 @@ object Diagnostics {
         ApplicationExitInfo.REASON_USER_STOPPED -> "force-stopped"
         ApplicationExitInfo.REASON_PERMISSION_CHANGE -> "permission changed"
         ApplicationExitInfo.REASON_EXIT_SELF -> "exited"
+        ApplicationExitInfo.REASON_PACKAGE_UPDATED -> "app update"
         else -> "other ($reason)"
     }
 
