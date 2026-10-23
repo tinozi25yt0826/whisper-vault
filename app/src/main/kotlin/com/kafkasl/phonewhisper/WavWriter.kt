@@ -2,7 +2,10 @@ package com.kafkasl.phonewhisper
 
 /** Wraps raw PCM bytes in a WAV container. */
 object WavWriter {
-    fun encode(pcm: ByteArray, sampleRate: Int = 16000, channels: Int = 1, bitsPerSample: Int = 16): ByteArray {
+    fun encode(pcm: ByteArray, sampleRate: Int = 16000, channels: Int = 1, bitsPerSample: Int = 16): ByteArray =
+        header(pcm.size, sampleRate, channels, bitsPerSample) + pcm
+
+    fun header(dataSize: Int, sampleRate: Int = 16000, channels: Int = 1, bitsPerSample: Int = 16): ByteArray {
         val byteRate = sampleRate * channels * bitsPerSample / 8
         val blockAlign = channels * bitsPerSample / 8
         val header = ByteArray(44)
@@ -12,7 +15,7 @@ object WavWriter {
         fun putShort(off: Int, v: Int) { header[off] = (v and 0xFF).toByte(); header[off + 1] = (v shr 8 and 0xFF).toByte() }
 
         putStr(0, "RIFF")
-        putInt(4, 36 + pcm.size)
+        putInt(4, 36 + dataSize)
         putStr(8, "WAVE")
         putStr(12, "fmt ")
         putInt(16, 16)            // fmt chunk size
@@ -23,8 +26,8 @@ object WavWriter {
         putShort(32, blockAlign)
         putShort(34, bitsPerSample)
         putStr(36, "data")
-        putInt(40, pcm.size)
+        putInt(40, dataSize)
 
-        return header + pcm
+        return header
     }
 }

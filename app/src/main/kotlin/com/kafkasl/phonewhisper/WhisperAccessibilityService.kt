@@ -15,6 +15,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Bundle
+import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -33,6 +34,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.OutputStream
 import kotlin.concurrent.thread
 import kotlin.math.abs
 
@@ -95,6 +99,14 @@ class WhisperAccessibilityService : AccessibilityService() {
     // Local transcription engine (loaded lazily)
     private var localTranscriber: LocalTranscriber? = null
 
+    // Every dictation is kept as Documents/Sportchronik/<name>.wav + .txt for syncing to the PC
+    @Suppress("DEPRECATION")
+    private val store by lazy {
+        DictationStore(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Sportchronik"))
+    }
+    private var currentName: String? = null
+    private var transcriptSaved = false
+
     private val dp get() = resources.displayMetrics.density
     private val screenW get() = resources.displayMetrics.widthPixels
     private val screenH get() = resources.displayMetrics.heightPixels
@@ -111,6 +123,12 @@ class WhisperAccessibilityService : AccessibilityService() {
         setOverlayVisible(overlayVisible(null, isKeyguardLocked()))
         // Try to load local model in background
         thread { initLocalModel() }
+        thread {
+            try {
+                val n = store.recover()
+                if (n > 0) Log.i(TAG, "Recovered $n interrupted recording(s)")
+            } catch (e: Exception) { Log.e(TAG, "Recovering recordings failed", e) }
+        }
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
@@ -377,6 +395,14 @@ class WhisperAccessibilityService : AccessibilityService() {
         } catch (_: SecurityException) { toast("Audio permission denied"); return }
 
         pcmStream = ByteArrayOutputStream()
+        val name = store.newName()
+        // Saving must never break dictation itself
+        val wavOut: OutputStream? = try { store.startWav(name) } catch (e: Exception) {
+            Log.e(TAG, "Cannot save recording", e)
+            showFeedback("Not saved: no access to Documents/Sportchronik", 3000)
+            null
+        }
+        currentName = wavOut?.let { name }
         audioRecord!!.startRecording()
         state = State.RECORDING
         setBusy(false)
@@ -387,10 +413,20 @@ class WhisperAccessibilityService : AccessibilityService() {
 
         thread {
             val buf = ByteArray(bufSize)
+            var out = wavOut
             while (state == State.RECORDING) {
                 val n = audioRecord?.read(buf, 0, buf.size) ?: break
-                if (n > 0) pcmStream?.write(buf, 0, n)
+                if (n > 0) {
+                    pcmStream?.write(buf, 0, n)
+                    try { out?.write(buf, 0, n) } catch (e: IOException) {
+                        Log.e(TAG, "Saving audio failed", e); out = null  // left as .part, recovered on next start
+                    }
+                }
             }
+            if (wavOut != null) try {
+                wavOut.close()
+                store.finishWav(File(store.dir, "$name.wav.part"))
+            } catch (e: Exception) { Log.e(TAG, "Finishing audio file failed", e) }
         }
     }
 
@@ -469,7 +505,19 @@ class WhisperAccessibilityService : AccessibilityService() {
         }
     }
 
+    private fun saveTranscript(text: String?) {
+        val name = currentName
+        currentName = null
+        transcriptSaved = false
+        if (name == null || text.isNullOrBlank()) return
+        transcriptSaved = try { store.saveText(name, text); true } catch (e: Exception) {
+            Log.e(TAG, "Saving transcript failed", e); false
+        }
+    }
+
     private fun handleTranscriptionResult(text: String?) {
+        // Raw transcript, before any optional cleanup: closest to what was actually said
+        saveTranscript(text)
         if (text.isNullOrBlank()) {
             handler.post {
                 toast("No speech detected")
@@ -530,7 +578,7 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     private fun injectText(
         text: String,
-        feedback: String? = "Copied to clipboard",
+        feedback: String? = if (transcriptSaved) "Saved · copied to clipboard" else "Copied to clipboard",
         feedbackDurationMs: Long = 2000
     ) {
         val clip = ClipData.newPlainText("phonewhisper", text)
