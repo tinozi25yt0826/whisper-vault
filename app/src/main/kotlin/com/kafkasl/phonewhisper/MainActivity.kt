@@ -147,7 +147,7 @@ class MainActivity : AppCompatActivity() {
 
         root.addView(sectionHeader("PC transfer"))
         val pcAddressRow = settingsRow("PC address", "") {
-            promptSetting("PC address", "pc_address", "192.168.178.22:8765")
+            promptSetting("PC address", "pc_address", "192.168.178.22:8770")
         }
         pcAddressSub = pcAddressRow.findViewWithTag("subtitle")
         root.addView(pcAddressRow)
@@ -348,7 +348,7 @@ class MainActivity : AppCompatActivity() {
             else -> "Tap to enable in settings"
         }
         WhisperAccessibilityService.instance?.refreshOverlayVisibility()
-        pcAddressSub.text = prefs().getString("pc_address", "").orEmpty().ifBlank { "Tap to set, e.g. 192.168.178.22:8765" }
+        pcAddressSub.text = prefs().getString("pc_address", "").orEmpty().ifBlank { "Tap to set, e.g. 192.168.178.22:8770" }
         pcKeySub.text = if (prefs().getString("pc_key", "").isNullOrBlank()) "Tap to set (shown on the PC)" else "Set"
         uploadSub.text = "Last: " + prefs().getString("upload_status", "never") +
             "\nAutomatic while charging on Wi-Fi"
