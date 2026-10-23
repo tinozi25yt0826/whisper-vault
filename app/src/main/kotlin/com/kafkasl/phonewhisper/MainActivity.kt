@@ -1,6 +1,9 @@
 package com.kafkasl.phonewhisper
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
@@ -28,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var audioRowSub: TextView
     private lateinit var accRowSub: TextView
     private lateinit var keyRowSub: TextView
+    private lateinit var diagRowSub: TextView
     private lateinit var promptRowSub: TextView
     private lateinit var promptRow: LinearLayout
     private lateinit var modelContainer: LinearLayout
@@ -137,6 +141,11 @@ class MainActivity : AppCompatActivity() {
         val keyRow = settingsRow("OpenAI API Key", "Tap to set") { promptApiKey() }
         keyRowSub = keyRow.findViewWithTag("subtitle")
         root.addView(keyRow)
+
+        root.addView(sectionHeader("Diagnostics"))
+        val diagRow = settingsRow("Recent app stops", "") { copyDiagnostics() }
+        diagRowSub = diagRow.findViewWithTag("subtitle")
+        root.addView(diagRow)
 
         setContentView(ScrollView(this).apply {
             setBackgroundColor(attrColor(android.R.attr.colorBackground))
@@ -312,7 +321,13 @@ class MainActivity : AppCompatActivity() {
         val hasModel = LocalTranscriber.availableModels(this).isNotEmpty()
 
         audioRowSub.text = if (audio) "Granted" else "Tap to grant permission"
-        accRowSub.text = if (acc) "Enabled" else "Tap to enable in settings"
+        accRowSub.text = when {
+            acc -> "Enabled"
+            accEnabledInSettings() -> "Switched on but not running – tap, then switch it off and on again"
+            else -> "Tap to enable in settings"
+        }
+        WhisperAccessibilityService.instance?.refreshOverlayVisibility()
+        diagRowSub.text = diagnosticsText(full = false).ifBlank { "Nothing recorded" } + "\nTap to copy"
 
         modelContainer.visibility = if (useLocal) View.VISIBLE else View.GONE
         promptContainer.visibility = if (usePostProcessing) View.VISIBLE else View.GONE
@@ -343,6 +358,25 @@ class MainActivity : AppCompatActivity() {
         
         refreshAllCards()
         refreshPromptRows()
+    }
+
+    /** The system can keep the service switched on in settings while its process is dead. */
+    private fun accEnabledInSettings(): Boolean {
+        val me = ComponentName(this, WhisperAccessibilityService::class.java)
+        return Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
+            ?.split(':')?.any { ComponentName.unflattenFromString(it) == me } == true
+    }
+
+    private fun diagnosticsText(full: Boolean): String {
+        val crash = prefs().getString(Diagnostics.LAST_CRASH_KEY, null)
+            ?.let { "Last crash: " + if (full) it else it.lineSequence().first() }
+        return (listOfNotNull(crash) + Diagnostics.recentExits(this)).joinToString("\n")
+    }
+
+    private fun copyDiagnostics() {
+        val text = "Whisper Vault ${packageManager.getPackageInfo(packageName, 0).versionName}\n" + diagnosticsText(full = true)
+        (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("diagnostics", text))
+        toast("Diagnostics copied")
     }
 
     private fun promptApiKey() {

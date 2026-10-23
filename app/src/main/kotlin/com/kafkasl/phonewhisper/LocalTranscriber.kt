@@ -48,7 +48,7 @@ class LocalTranscriber private constructor(private val recognizer: OfflineRecogn
                 val recognizer = OfflineRecognizer(assetManager = null, config = config)
                 Log.i(TAG, "Loaded model: $modelName")
                 LocalTranscriber(recognizer)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {  // also OutOfMemoryError / native link errors: must not kill the service
                 Log.e(TAG, "Failed to load model: ${e.message}")
                 null
             }

@@ -115,6 +115,12 @@ class WhisperAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         instance = this
+        // Keep the reason of a crash so the app can show it (no adb needed)
+        val previous = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { t, e ->
+            prefs().edit().putString(Diagnostics.LAST_CRASH_KEY, Diagnostics.describeCrash(e)).commit()
+            previous?.uncaughtException(t, e)
+        }
         showOverlay()
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
@@ -129,9 +135,12 @@ class WhisperAccessibilityService : AccessibilityService() {
             try {
                 val n = store.recover()
                 if (n > 0) Log.i(TAG, "Recovered $n interrupted recording(s)")
-            } catch (e: Exception) { Log.e(TAG, "Recovering recordings failed", e) }
+            } catch (e: Throwable) { Log.e(TAG, "Recovering recordings failed", e) }
         }
     }
+
+    /** Brings back a button that is hidden although the phone is unlocked (called when the app is opened). */
+    fun refreshOverlayVisibility() = handler.post { setOverlayVisible(overlayVisible(null, isKeyguardLocked())) }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {}
     override fun onInterrupt() {}
@@ -488,7 +497,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                 Log.i(TAG, "Local transcription: ${ms}ms, ${samples.size / SAMPLE_RATE}s audio")
 
                 handleTranscriptionResult(text)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {  // incl. OutOfMemoryError: the WAV is already saved, keep the service alive
                 Log.e(TAG, "Local transcription failed", e)
                 handler.post {
                     toast("Local error: ${e.message}")
