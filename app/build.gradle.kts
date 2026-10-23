@@ -13,8 +13,8 @@ android {
         applicationId = "de.tinozi.whispervault"
         minSdk = 30
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.4.1"
+        versionCode = 5
+        versionName = "0.4.2"
 
         ndk { abiFilters += "arm64-v8a" }
     }
@@ -39,4 +39,5 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.json:json:20240303")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
 }

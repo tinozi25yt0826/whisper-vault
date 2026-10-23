@@ -32,6 +32,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var accRowSub: TextView
     private lateinit var keyRowSub: TextView
     private lateinit var diagRowSub: TextView
+    private lateinit var pcAddressSub: TextView
+    private lateinit var pcKeySub: TextView
+    private lateinit var uploadSub: TextView
     private lateinit var promptRowSub: TextView
     private lateinit var promptRow: LinearLayout
     private lateinit var modelContainer: LinearLayout
@@ -141,6 +144,24 @@ class MainActivity : AppCompatActivity() {
         val keyRow = settingsRow("OpenAI API Key", "Tap to set") { promptApiKey() }
         keyRowSub = keyRow.findViewWithTag("subtitle")
         root.addView(keyRow)
+
+        root.addView(sectionHeader("PC transfer"))
+        val pcAddressRow = settingsRow("PC address", "") {
+            promptSetting("PC address", "pc_address", "192.168.178.22:8765")
+        }
+        pcAddressSub = pcAddressRow.findViewWithTag("subtitle")
+        root.addView(pcAddressRow)
+        val pcKeyRow = settingsRow("Transfer key", "") {
+            promptSetting("Transfer key", "pc_key", "abcd-efgh-2345")
+        }
+        pcKeySub = pcKeyRow.findViewWithTag("subtitle")
+        root.addView(pcKeyRow)
+        val uploadRow = settingsRow("Transfer now", "") {
+            UploadJobService.runNow(this)
+            toast("Transfer starts as soon as Wi-Fi is available")
+        }
+        uploadSub = uploadRow.findViewWithTag("subtitle")
+        root.addView(uploadRow)
 
         root.addView(sectionHeader("Diagnostics"))
         val diagRow = settingsRow("Recent app stops", "") { copyDiagnostics() }
@@ -327,6 +348,10 @@ class MainActivity : AppCompatActivity() {
             else -> "Tap to enable in settings"
         }
         WhisperAccessibilityService.instance?.refreshOverlayVisibility()
+        pcAddressSub.text = prefs().getString("pc_address", "").orEmpty().ifBlank { "Tap to set, e.g. 192.168.178.22:8765" }
+        pcKeySub.text = if (prefs().getString("pc_key", "").isNullOrBlank()) "Tap to set (shown on the PC)" else "Set"
+        uploadSub.text = "Last: " + prefs().getString("upload_status", "never") +
+            "\nAutomatic while charging on Wi-Fi"
         diagRowSub.text = diagnosticsText(full = false).ifBlank { "Nothing recorded" } + "\nTap to copy"
 
         modelContainer.visibility = if (useLocal) View.VISIBLE else View.GONE
@@ -377,6 +402,23 @@ class MainActivity : AppCompatActivity() {
         val text = "Whisper Vault ${packageManager.getPackageInfo(packageName, 0).versionName}\n" + diagnosticsText(full = true)
         (getSystemService(CLIPBOARD_SERVICE) as ClipboardManager).setPrimaryClip(ClipData.newPlainText("diagnostics", text))
         toast("Diagnostics copied")
+    }
+
+    private fun promptSetting(title: String, prefKey: String, example: String) {
+        val input = EditText(this).apply {
+            hint = example
+            setText(prefs().getString(prefKey, ""))
+        }
+        android.app.AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(input.apply { setPadding(dp(24), dp(8), dp(24), dp(8)) })
+            .setPositiveButton("Save") { _, _ ->
+                prefs().edit().putString(prefKey, input.text.toString().trim()).apply()
+                UploadJobService.schedule(this)
+                refresh()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun promptApiKey() {

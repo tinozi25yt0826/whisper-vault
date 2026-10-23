@@ -1,5 +1,6 @@
 package com.kafkasl.phonewhisper
 
+import android.os.Environment
 import java.io.File
 import java.io.IOException
 import java.io.OutputStream
@@ -18,6 +19,10 @@ class DictationStore(val dir: File) {
         private val NAME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd_HHmmss")
         private const val ALPHABET = "abcdefghijkmnpqrstuvwxyz23456789"
         private const val HEADER_SIZE = 44
+
+        /** Documents/Sportchronik on the phone's shared storage. */
+        @Suppress("DEPRECATION")
+        fun publicDir() = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Sportchronik")
     }
 
     /** Sorts chronologically; the random suffix keeps two dictations in the same second apart. */

@@ -15,7 +15,6 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.os.Bundle
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.VibrationEffect
@@ -102,10 +101,7 @@ class WhisperAccessibilityService : AccessibilityService() {
     private var localTranscriber: LocalTranscriber? = null
 
     // Every dictation is kept as Documents/Sportchronik/<name>.wav + .txt for syncing to the PC
-    @Suppress("DEPRECATION")
-    private val store by lazy {
-        DictationStore(File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "Sportchronik"))
-    }
+    private val store by lazy { DictationStore(DictationStore.publicDir()) }
     private var currentName: String? = null
     private var transcriptSaved = false
 
@@ -137,6 +133,7 @@ class WhisperAccessibilityService : AccessibilityService() {
                 if (n > 0) Log.i(TAG, "Recovered $n interrupted recording(s)")
             } catch (e: Throwable) { Log.e(TAG, "Recovering recordings failed", e) }
         }
+        try { UploadJobService.schedule(this) } catch (e: Exception) { Log.e(TAG, "Scheduling PC transfer failed", e) }
     }
 
     /** Brings back a button that is hidden although the phone is unlocked (called when the app is opened). */
