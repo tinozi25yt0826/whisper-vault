@@ -1,28 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Padlock with a microphone as keyhole; the mic is drawn in ic_launcher_background to read as a cut-out -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
     <path
+        android:fillColor="#00000000"
+        android:pathData="M42,48V40a12,12 0 0,1 24,0v8"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeWidth="6" />
+    <path
         android:fillColor="#FFFFFFFF"
-        android:pathData="M54,20c-7.73,0 -14,6.27 -14,14v18c0,7.73 6.27,14 14,14s14,-6.27 14,-14V34c0,-7.73 -6.27,-14 -14,-14z" />
+        android:pathData="M39,46h30a8,8 0 0,1 8,8v20a8,8 0 0,1 -8,8h-30a8,8 0 0,1 -8,-8v-20a8,8 0 0,1 8,-8z" />
+    <path
+        android:fillColor="@color/ic_launcher_background"
+        android:pathData="M54,51c-3.04,0 -5.5,2.46 -5.5,5.5v6c0,3.04 2.46,5.5 5.5,5.5s5.5,-2.46 5.5,-5.5v-6c0,-3.04 -2.46,-5.5 -5.5,-5.5z" />
     <path
         android:fillColor="#00000000"
-        android:pathData="M30,52c0,13.25 10.75,24 24,24s24,-10.75 24,-24"
-        android:strokeColor="#FFFFFFFF"
+        android:pathData="M42.5,63a11.5,11.5 0 0,0 23,0M54,74.5V78"
+        android:strokeColor="@color/ic_launcher_background"
         android:strokeLineCap="round"
-        android:strokeWidth="6" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M54,76v12"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="6" />
-    <path
-        android:fillColor="#00000000"
-        android:pathData="M42,90h24"
-        android:strokeColor="#FFFFFFFF"
-        android:strokeLineCap="round"
-        android:strokeWidth="6" />
+        android:strokeWidth="3" />
 </vector>

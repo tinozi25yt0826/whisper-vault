@@ -13,8 +13,8 @@ android {
         applicationId = "de.tinozi.whispervault"
         minSdk = 30
         targetSdk = 34
-        versionCode = 6
-        versionName = "0.4.3"
+        versionCode = 7
+        versionName = "0.4.4"
 
         ndk { abiFilters += "arm64-v8a" }
     }
