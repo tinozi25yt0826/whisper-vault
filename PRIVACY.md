@@ -1,4 +1,70 @@
-# Privacy Policy for Whisper Vault
+<p align="center"><b>Deutsch</b> · <a href="#english">English below</a></p>
+
+# Datenschutzerklärung für Whisper Vault
+
+Whisper Vault ist eine Diktier-App für Android. Sie nimmt Sprache auf, wandelt sie in Text um, fügt ihn in Textfelder anderer Apps ein und bewahrt jedes Diktat als Datei auf. Sie ist ein Fork von Phone Whisper von Pol Alvarez.
+
+## Umgang mit Daten
+
+Whisper Vault bietet zwei Arten der Spracherkennung.
+
+### Lokal
+
+Im lokalen Modus wird die Aufnahme auf dem Gerät mit lokalen Spracherkennungsmodellen verarbeitet. Die Aufnahme wird an keinen Transkriptionsdienst geschickt.
+
+### Cloud
+
+Im Cloud-Modus geht die Aufnahme direkt vom Gerät an die Transkriptions-API von OpenAI, die daraus Text erzeugt.
+
+Ist die optionale Nachbearbeitung eingeschaltet, geht auch der erkannte Text direkt vom Gerät an die Chat-API von OpenAI, um Satzzeichen, Groß- und Kleinschreibung und Lesbarkeit zu verbessern.
+
+## Diktat-Archiv
+
+Jedes Diktat wird auf dem Gerät als Audiodatei (WAV) und als Textdatei mit dem Rohtext im gemeinsamen Ordner `Documents/Sportchronik` gespeichert.
+
+Die Dateien bleiben auf dem Gerät, bis du sie löschst. Weil der Ordner im gemeinsamen Speicher liegt, können Dateimanager, ein angeschlossener Computer und Apps mit Dateizugriff sie lesen.
+
+## Übertragung an deinen PC
+
+Die Übertragung ist aus, bis du in der App eine PC-Adresse und einen Übertragungsschlüssel einträgst.
+
+Ist sie eingerichtet, gehen die Dateien nur an die eingetragene Adresse: automatisch einmal pro Stunde, wenn das Handy lädt und in einem Netz ohne Volumenbegrenzung ist, oder wenn du **Transfer now** antippst. Vor dem Senden muss der PC beweisen, dass er den Übertragungsschlüssel kennt. So landen keine Dateien bei einem fremden Gerät, das zufällig dieselbe Adresse hat.
+
+Die Übertragung nutzt einfaches HTTP im lokalen Netz. Geschützt ist sie nur durch die WLAN-Verschlüsselung, nutze sie also nur in einem Netz, dem du vertraust.
+
+Die App merkt sich in ihrem eigenen Speicher, welche Dateien schon gesendet wurden.
+
+## API-Schlüssel und Übertragungsschlüssel
+
+Dein OpenAI-API-Schlüssel und der Übertragungsschlüssel werden nur auf deinem Gerät im App-Speicher abgelegt. Der OpenAI-Schlüssel dient nur zur Anmeldung bei Anfragen, die direkt an OpenAI gehen, der Übertragungsschlüssel nur für deinen eigenen PC.
+
+Ich betreibe keinen Server, über den diese Anfragen laufen.
+
+## Bedienungshilfe-Dienst
+
+Whisper Vault nutzt den Android-Bedienungshilfe-Dienst nur, um das gerade aktive Textfeld zu finden und dort den diktierten Text einzufügen, nachdem du den schwebenden Knopf bewusst benutzt hast.
+
+Whisper Vault ist nicht dafür gebaut, dein Surfen zu beobachten, Bildschirminhalte für Auswertungen zu sammeln oder im Hintergrund Abläufe zu automatisieren.
+
+## Diagnose
+
+Die App liest die Gründe, die Android für ihr letztes Beenden angibt, und ihren letzten Absturz, und zeigt sie in der App an. Dieser Bericht wird nur in die Zwischenablage kopiert, wenn du ihn antippst. Die App schickt ihn nirgendwohin.
+
+## Datenerhebung
+
+Ich betreibe keinen Server für Whisper Vault und erhebe keine Benutzerkonten, Nutzungsstatistiken oder Aufnahmen.
+
+Dienste anderer Anbieter, die du selbst nutzt, etwa OpenAI, verarbeiten Daten nach ihren eigenen Bedingungen und Datenschutzerklärungen.
+
+## Kontakt
+
+Fragen zum Datenschutz an: sport@tinozi.de
+
+---
+
+<a id="english"></a>
+
+# Privacy Policy for Whisper Vault (English)
 
 Whisper Vault is an Android dictation app that records speech, transcribes it, inserts the result into text fields across apps, and keeps every dictation as a file. It is a fork of Phone Whisper by Pol Alvarez.
 
